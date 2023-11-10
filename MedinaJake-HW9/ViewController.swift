@@ -4,6 +4,9 @@
 //
 //  Created by Jake Medina on 11/9/23.
 //
+//  Project: MedinaJake-HW9
+//  EID: jrm7784
+//  Course: CS371L
 
 import UIKit
 
@@ -81,12 +84,9 @@ class ViewController: UIViewController {
         if isWithinOneOf(boxX, screenOriginX) ||
             isWithinOneOf(boxX, screenWidth - boxWidth) ||
             isWithinOneOf(boxY, screenOriginY) ||
-            isWithinOneOf(boxY, screenOriginY + screenHeight - boxHeight)
-        {
+            isWithinOneOf(boxY, screenOriginY + screenHeight - boxHeight) {
             return true
         }
-        
-        greenView.backgroundColor = .green
         return false
     }
     
@@ -140,12 +140,10 @@ class ViewController: UIViewController {
             // for a little before moving
             if moveImmediately {
                 queue.async {
-                    print("tap gesture")
                     self.moveBlock(direction: 1)
                 }
             } else {
                 queue.async {
-                    print("tap gesture")
                     usleep(300000)
                     self.moveBlock(direction: 1)
                 }
