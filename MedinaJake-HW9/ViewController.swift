@@ -27,10 +27,16 @@ class ViewController: UIViewController {
     var blockIsMoving: Bool = false
     
     var greenView = UIView()
+    
+    var queue: DispatchQueue!
+    
+    var movementDirection: Int = 1
 
     override func viewDidLoad() {
         super.viewDidLoad()
         print(self.view.frame.height - self.view.safeAreaInsets.top)
+    
+        queue = DispatchQueue(label: "blockMoverQueue", qos: .userInteractive)
         
         let window = UIApplication.shared.windows.first
         let topPadding = (window?.safeAreaInsets.top)!
@@ -44,6 +50,11 @@ class ViewController: UIViewController {
         
         boxWidth = screenWidth / 9
         boxHeight = screenHeight / 19
+        
+        
+//        var bottomView = UIView(frame: CGRect(x: 0, y: screenOriginY+screenHeight-boxHeight, width: screenWidth, height: boxHeight))
+//        bottomView.backgroundColor = .red
+//        view.addSubview(bottomView)
         
         setupView()
         
@@ -67,33 +78,84 @@ class ViewController: UIViewController {
         // center column is the 5th column
         // center row is the 10th column
         if !blockIsMoving {
-            boxX = boxWidth * 4
-            boxY = boxHeight * 10
+            greenView.backgroundColor = .green
+            boxX = screenOriginX + boxWidth * 4
+            boxY = screenOriginY + boxHeight * 9
             greenView.frame.origin.x = boxX
             greenView.frame.origin.y = boxY
         }
     }
     
-    func moveBlock(direction: Int) {
-//        while blockIsMoving {
-            sleep(1)
-            switch direction {
-            case 0: //up
-                boxY = boxY - boxHeight
-                greenView.frame.origin.y = boxY
-                break
-            case 1: //down
-                boxY = boxY + boxHeight
-                greenView.frame.origin.y = boxY
-                break
-            case 2: //left
-                break
-            case 3: //right
-                break
-            default:
-                break
-            }
+    func isWithinOneOf(_ num1: Double, _ num2: Double) -> Bool {
+        let difference = abs(num1 - num2)
+            return difference <= 1.0
+    }
+    
+    func blockIsTouchingEdge() -> Bool {
+        
+//        if greenView.frame.origin.x == screenOriginX ||
+//            greenView.frame.origin.x == screenWidth - boxWidth ||
+//            greenView.frame.origin.y == screenOriginY ||
+//            greenView.frame.origin.y == screenOriginY + screenHeight - boxHeight
+        print("boxY \(boxY)")
+        print("calculation \(screenOriginY+screenHeight-boxHeight)")
+        if isWithinOneOf(boxX, screenOriginX) ||
+            isWithinOneOf(boxX, screenWidth - boxWidth) ||
+            isWithinOneOf(boxY, screenOriginY) ||
+            isWithinOneOf(boxY, screenOriginY + screenHeight - boxHeight)
+        {
+            print("blockIsTouchingEdge true")
+            return true
+        }
+        
+//        if greenView.frame.origin.x == screenOriginX {
+//            return true
 //        }
+//        
+//        if greenView.frame.origin.x == screenWidth - boxWidth {
+//            return true
+//        }
+//        
+//        if greenView.frame.origin.y == screenOriginY {
+//            return true
+//        }
+//        
+//        if greenView.frame.origin.y == screenOriginY + screenHeight - boxHeight {
+//            return true
+//        }
+        
+        greenView.backgroundColor = .green
+        print("blockIsTouchingEdge false")
+        return false
+    }
+    
+    func moveBlock(direction: Int) {
+        while !blockIsTouchingEdge() && direction == movementDirection {
+            self.blockIsMoving = true
+            switch direction {
+                case 0: //up
+                    boxY = boxY - boxHeight
+                case 1: //down
+                    boxY = boxY + boxHeight
+                case 2: //left
+                    boxX = boxX - boxWidth
+                case 3: //right
+                    boxX = boxX + boxWidth
+                default:
+                    break
+            }
+            DispatchQueue.main.async {
+                self.greenView.frame.origin.x = self.boxX
+                self.greenView.frame.origin.y = self.boxY
+            }
+            if blockIsTouchingEdge() {
+                DispatchQueue.main.async {
+                    self.greenView.backgroundColor = .red
+                    self.blockIsMoving = false
+                }
+            }
+            usleep(300000)
+        }
     }
     
     @IBAction func recognizeTapGesture(recognizer: UITapGestureRecognizer) {
@@ -105,23 +167,35 @@ class ViewController: UIViewController {
     }
     
     @IBAction func handleSwipeRight(recognizer: UISwipeGestureRecognizer) {
-        print("swipe right")
-        moveBlock(direction: 3)
+        movementDirection = 3
+        queue.async {
+            print("swipe right")
+            self.moveBlock(direction: 3)
+        }
     }
     
     @IBAction func handleSwipeLeft(recognizer: UISwipeGestureRecognizer) {
-        print("swipe left")
-        moveBlock(direction: 2)
+        movementDirection = 2
+        queue.async {
+            print("swipe left")
+            self.moveBlock(direction: 2)
+        }
     }
     
     @IBAction func handleSwipeUp(recognizer: UISwipeGestureRecognizer) {
-        print("swipe up")
-        moveBlock(direction: 0)
+        movementDirection = 0
+        queue.async {
+            print("swipe up")
+            self.moveBlock(direction: 0)
+        }
     }
     
     @IBAction func handleSwipeDown(recognizer: UISwipeGestureRecognizer) {
-        print("swipe down")
-        moveBlock(direction: 1)
+        movementDirection = 1
+        queue.async {
+            print("swipe down")
+            self.moveBlock(direction: 1)
+        }
     }
     
     
